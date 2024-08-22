@@ -50,7 +50,7 @@ public class PongGameVsBot extends JPanel implements KeyListener, ActionListener
     public void paintComponent(Graphics g) {
         super.paintComponent(g); // Call the superclass method to ensure proper rendering
 
-        g.setColor(Color.WHITE); // Set the drawing color to white for the paddles, ball, and scores
+        g.setColor(Color.WHITE); // Set the drawing color to white for the paddles, ball, and scores                                                                                                         // THIS CODE WAS MADE BY SETH LASSITER 
 
         g.fillRect(20, paddle1Y, paddleWidth, paddleHeight); // Draw the human player's (left) paddle
         g.fillRect(WIDTH - 40, paddle2Y, paddleWidth, paddleHeight); // Draw the computer's (right) paddle
