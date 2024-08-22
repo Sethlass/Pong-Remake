@@ -133,7 +133,7 @@ public class PongGame extends JPanel implements KeyListener, ActionListener {
     // Method to handle key releases
     @Override
     public void keyReleased(KeyEvent e) {
-        pressedKeys.remove(e.getKeyCode()); // Remove the released key from the set of pressed keys
+        pressedKeys.remove(e.getKeyCode()); // Remove the released key from the set of pressed keys                                                                        // THIS CODE WAS MADE BY SETH LASSITER 
     }
 
     @Override
