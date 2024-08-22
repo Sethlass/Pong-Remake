@@ -4,16 +4,16 @@ import java.awt.event.*;
 import java.util.HashSet;
 import java.util.Set;
 
-public class PongGame extends JPanel implements KeyListener, ActionListener {
+public class PongGameVsBot extends JPanel implements KeyListener, ActionListener {
 
     private static final int WIDTH = 800; // Width of the game window
     private static final int HEIGHT = 600; // Height of the game window
 
-    private int paddle1Y = 250; // Y position of the first paddle (left paddle)
-    private int paddle2Y = 250; // Y position of the second paddle (right paddle)
+    private int paddle1Y = 250; // Y position of the first paddle (left paddle - human player)
+    private int paddle2Y = 250; // Y position of the second paddle (right paddle - computer player)
     private int paddleWidth = 10; // Width of both paddles
     private int paddleHeight = 100; // Height of both paddles
-    private int paddleSpeed = 10; // Speed at which paddles move up or down
+    private int paddleSpeed = 10; // Speed at which the human player's paddle moves up or down
 
     private int ballX = 400; // X position of the ball (starting at center)
     private int ballY = 300; // Y position of the ball (starting at center)
@@ -21,17 +21,21 @@ public class PongGame extends JPanel implements KeyListener, ActionListener {
     private int ballSpeedX = 5; // Speed of the ball along the X-axis
     private int ballSpeedY = 5; // Speed of the ball along the Y-axis
 
-    private int score1 = 0; // Score for the first player (left side)
-    private int score2 = 0; // Score for the second player (right side)
+    private int score1 = 0; // Score for the human player (left side)
+    private int score2 = 0; // Score for the computer player (right side)
 
     private Timer timer; // Timer to control the game's animation
     private boolean gameStarted = false; // Flag to indicate if the game has started
+    private boolean hardMode = true; // Flag to indicate if hard mode is selected (default is hard)
+
+    private int computerPaddleSpeed = 7; // Speed at which the computer's paddle moves in hard mode
+    private int easyComputerPaddleSpeed = 4; // Speed at which the computer's paddle moves in easy mode
 
     // Set to keep track of currently pressed keys
     private Set<Integer> pressedKeys = new HashSet<>();
 
     // Constructor to initialize the PongGame panel
-    public PongGame() {
+    public PongGameVsBot() {
         this.setPreferredSize(new Dimension(WIDTH, HEIGHT)); // Set the preferred size of the panel
         this.setBackground(Color.BLACK); // Set the background color of the panel to black
         this.setFocusable(true); // Enable the panel to capture keyboard input
@@ -48,18 +52,19 @@ public class PongGame extends JPanel implements KeyListener, ActionListener {
 
         g.setColor(Color.WHITE); // Set the drawing color to white for the paddles, ball, and scores
 
-        g.fillRect(20, paddle1Y, paddleWidth, paddleHeight); // Draw the left paddle
-        g.fillRect(WIDTH - 40, paddle2Y, paddleWidth, paddleHeight); // Draw the right paddle
+        g.fillRect(20, paddle1Y, paddleWidth, paddleHeight); // Draw the human player's (left) paddle
+        g.fillRect(WIDTH - 40, paddle2Y, paddleWidth, paddleHeight); // Draw the computer's (right) paddle
 
         g.fillOval(ballX, ballY, ballSize, ballSize); // Draw the ball at its current position
 
         g.setFont(new Font("Arial", Font.PLAIN, 30)); // Set the font for the scores
-        g.drawString(String.valueOf(score1), WIDTH / 2 - 50, 30); // Draw the first player's score
-        g.drawString(String.valueOf(score2), WIDTH / 2 + 30, 30); // Draw the second player's score
+        g.drawString(String.valueOf(score1), WIDTH / 2 - 50, 30); // Draw the human player's score
+        g.drawString(String.valueOf(score2), WIDTH / 2 + 30, 30); // Draw the computer's score
 
         // Display start message if the game hasn't started
         if (!gameStarted) {
             g.drawString("Press Space to Start", WIDTH / 2 - 150, HEIGHT / 2);
+            g.drawString("Press E for Easy or H for Hard", WIDTH / 2 - 180, HEIGHT / 2 + 40);
         }
     }
 
@@ -75,23 +80,23 @@ public class PongGame extends JPanel implements KeyListener, ActionListener {
                 ballSpeedY = -ballSpeedY; // Reverse the ball's Y direction if it hits a wall
             }
 
-            // Check for ball collision with the left paddle
+            // Check for ball collision with the human player's paddle
             if (ballX <= 30 && ballY >= paddle1Y && ballY <= paddle1Y + paddleHeight) {
                 ballSpeedX = -ballSpeedX; // Reverse the ball's X direction if it hits the left paddle
             } 
-            // Check for ball collision with the right paddle
+            // Check for ball collision with the computer's paddle
             else if (ballX >= WIDTH - 50 && ballY >= paddle2Y && ballY <= paddle2Y + paddleHeight) {
                 ballSpeedX = -ballSpeedX; // Reverse the ball's X direction if it hits the right paddle
             }
 
-            // Check if the ball goes out of bounds on the left side (score for player 2)
+            // Check if the ball goes out of bounds on the left side (score for computer)
             if (ballX <= 0) {
-                score2++; // Increment player 2's score
+                score2++; // Increment computer's score
                 resetBall(); // Reset the ball to the center and change its direction
             } 
-            // Check if the ball goes out of bounds on the right side (score for player 1)
+            // Check if the ball goes out of bounds on the right side (score for human)
             else if (ballX >= WIDTH - ballSize) {
-                score1++; // Increment player 1's score
+                score1++; // Increment human player's score
                 resetBall(); // Reset the ball to the center and change its direction
             }
 
@@ -102,12 +107,18 @@ public class PongGame extends JPanel implements KeyListener, ActionListener {
             if (pressedKeys.contains(KeyEvent.VK_S) && paddle1Y <= HEIGHT - paddleHeight - paddleSpeed) {
                 paddle1Y += paddleSpeed; // Move the left paddle down
             }
-            if (pressedKeys.contains(KeyEvent.VK_UP) && paddle2Y >= paddleSpeed) {
-                paddle2Y -= paddleSpeed; // Move the right paddle up
+
+            // Simple AI for the computer paddle: follow the ball's Y position
+            int currentPaddleSpeed = hardMode ? computerPaddleSpeed : easyComputerPaddleSpeed;
+            if (paddle2Y + paddleHeight / 2 < ballY) {
+                paddle2Y += currentPaddleSpeed; // Move computer paddle down
+            } else if (paddle2Y + paddleHeight / 2 > ballY) {
+                paddle2Y -= currentPaddleSpeed; // Move computer paddle up
             }
-            if (pressedKeys.contains(KeyEvent.VK_DOWN) && paddle2Y <= HEIGHT - paddleHeight - paddleSpeed) {
-                paddle2Y += paddleSpeed; // Move the right paddle down
-            }
+
+            // Prevent computer paddle from moving out of bounds
+            paddle2Y = Math.max(paddle2Y, 0);
+            paddle2Y = Math.min(paddle2Y, HEIGHT - paddleHeight);
         }
         repaint(); // Repaint the panel to update the screen with the new positions and scores
     }
@@ -119,7 +130,7 @@ public class PongGame extends JPanel implements KeyListener, ActionListener {
         ballSpeedX = -ballSpeedX; // Reverse the ball's X direction
     }
 
-    // Method to handle key presses for paddle movement and game start
+    // Method to handle key presses for paddle movement, game start, and difficulty selection
     @Override
     public void keyPressed(KeyEvent e) {
         pressedKeys.add(e.getKeyCode()); // Add the pressed key to the set of pressed keys
@@ -127,6 +138,16 @@ public class PongGame extends JPanel implements KeyListener, ActionListener {
         // Start the game when the space bar is pressed
         if (e.getKeyCode() == KeyEvent.VK_SPACE) {
             gameStarted = true; // Start the game
+        }
+
+        // Set game to Easy mode when 'E' is pressed
+        if (e.getKeyCode() == KeyEvent.VK_E && !gameStarted) {
+            hardMode = false;
+        }
+
+        // Set game to Hard mode when 'H' is pressed
+        if (e.getKeyCode() == KeyEvent.VK_H && !gameStarted) {
+            hardMode = true;
         }
     }
 
@@ -144,7 +165,7 @@ public class PongGame extends JPanel implements KeyListener, ActionListener {
     // Main method to set up the game window and start the game
     public static void main(String[] args) {
         JFrame frame = new JFrame("Pong Game"); // Create a new JFrame for the game window
-        PongGame game = new PongGame(); // Create an instance of the PongGame class
+        PongGameVsBot game = new PongGameVsBot(); // Create an instance of the PongGame class
 
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE); // Ensure the application exits when the window is closed
         frame.add(game); // Add the PongGame panel to the frame
@@ -153,3 +174,5 @@ public class PongGame extends JPanel implements KeyListener, ActionListener {
         frame.setResizable(false); // Prevent the window from being resized
     }
 }
+
+
